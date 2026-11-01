@@ -1,0 +1,13 @@
+# Optionnel : Qdrant en mode serveur (tableau de bord sur http://localhost:6333/dashboard).
+# Sans ça, le backend utilise un Qdrant local stocké dans backend/data/qdrant.
+# Pour l'utiliser : `docker compose up -d` puis QDRANT_URL=http://localhost:6333 dans backend/.env
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.15.0
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+volumes:
+  qdrant_data:

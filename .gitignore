@@ -218,3 +218,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Dora ---
+# Frontend
+node_modules/
+frontend/dist/
+
+# PDF importés et index local
+backend/data/
+
+# macOS
+.DS_Store
