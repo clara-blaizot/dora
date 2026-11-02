@@ -4,7 +4,7 @@
 
 - Python 3.11 ou plus (testé avec 3.14)
 - Node 20 ou plus
-- Une clé API Anthropic (seulement pour la rédaction des réponses, les tests n'en ont pas besoin)
+- Une clé API Gemini (seulement pour la rédaction des réponses, les tests n'en ont pas besoin)
 - Optionnel : Docker, pour Qdrant en mode serveur
 
 ## Installation
@@ -16,7 +16,7 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env        # renseigner ANTHROPIC_API_KEY
+cp .env.example .env        # renseigner GEMINI_API_KEY
 uvicorn app.main:app --reload
 ```
 
@@ -44,8 +44,8 @@ Tableau de bord : http://localhost:6333/dashboard
 
 | Variable | Défaut | Rôle |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | – | clé de l'API Claude |
-| `DORA_MODEL` | `claude-opus-5-5` | modèle de rédaction ([llm.md](llm.md)) |
+| `GEMINI_API_KEY` | – | clé de l'API Gemini |
+| `DORA_MODEL` | `gemini-3.8-flash` | modèle de rédaction ([llm.md](llm.md)) |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | origine autorisée (CORS) |
 | `EMBEDDING_MODEL` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | modèle d'embeddings ([rag.md](rag.md)) |
 | `QDRANT_URL` | vide (mode local) | adresse d'un serveur Qdrant |

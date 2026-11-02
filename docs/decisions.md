@@ -51,6 +51,20 @@ bon endroit.
 `DORA_MODEL`. Tout l'accès au LLM est isolé dans `app/llm.py`.
 **Pourquoi :** bonne qualité en français. Isoler l'accès dans un fichier
 permet de changer de fournisseur facilement (voir [llm.md](llm.md)).
+**Historique :** cette décision a été remplacée par l'intégration Gemini, mais
+elle reste conservée comme référence de la première implémentation.
+
+## 2026-11-02 — Gemini remplace Claude comme LLM de rédaction
+
+**Décision :** le projet utilise désormais le SDK `google-genai` pour Gemini,
+avec `GEMINI_API_KEY` lu depuis `backend/.env` et le modèle défini par
+`DORA_MODEL` (par défaut : `gemini-3.8-flash`). Tout l'accès au LLM reste
+centralisé dans `backend/app/llm.py`.
+**Pourquoi :** le fournisseur actuel est celui implémenté dans le code, avec un
+accès simple via `genai.Client()` et une sortie texte brute via
+`interaction.output_text`.
+**Remplace :** la décision antérieure sur Claude / Anthropic, conservée ici à
+titre historique.
 
 ## 2026-11-01 — Stack : FastAPI + React (Vite)
 

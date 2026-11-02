@@ -1,36 +1,34 @@
-"""Point d'accès unique au LLM.
-
-Le LLM ne sert qu'à rédiger (réponses, fiches, quiz) : la recherche des
-passages se fait dans app/rag. Pour changer de fournisseur de LLM, il suffit
-de modifier ce fichier.
-"""
+"""Point d'accès unique au LLM Gemini."""
 
 from functools import lru_cache
 
-import anthropic
+from google import genai
 
 from app.config import MODEL
 
 
 @lru_cache
-def get_client() -> anthropic.Anthropic:
-    # La clé est lue depuis ANTHROPIC_API_KEY (voir .env.example)
-    return anthropic.Anthropic()
+def get_client() -> genai.Client:
+    # Le client lit GEMINI_API_KEY depuis les variables d'environnement.
+    return genai.Client()
 
 
-def create_message(*, system: str, messages: list[dict], max_tokens: int = 16000, **kwargs):
-    """Appelle Claude avec les réglages par défaut de Dora.
-
-    `fallbacks="default"` : si le modèle refuse une requête, l'API la rejoue
-    automatiquement sur un modèle de repli.
-    """
-    return get_client().beta.messages.create(
-        model=MODEL,
-        max_tokens=max_tokens,
-        system=system,
-        messages=messages,
-        output_config={"effort": "medium"},
-        betas=["server-side-fallback-2026-07-01"],
-        fallbacks="default",
-        **kwargs,
+def create_message(
+    *,
+    system: str,
+    messages: list[dict],
+    max_tokens: int = 16000,
+) -> str:
+    prompt = "\n\n".join(
+        f"{message['role']}:\n{message['content']}"
+        for message in messages
     )
+
+    interaction = get_client().interactions.create(
+        model=MODEL,
+        system_instruction=system,
+        input=prompt,
+        generation_config={"max_output_tokens": max_tokens},
+    )
+
+    return interaction.output_text or ""

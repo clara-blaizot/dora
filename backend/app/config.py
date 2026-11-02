@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BACKEND_DIR / ".env")
 
-MODEL = os.getenv("DORA_MODEL", "claude-opus-5-5")
+MODEL = os.getenv("DORA_MODEL", "gemini-3.8-flash")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
 
 # Stockage local des PDF et de leurs métadonnées

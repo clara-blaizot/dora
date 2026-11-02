@@ -16,12 +16,16 @@ Pour changer de modèle ou de fournisseur, on ne modifie que ce fichier.
 
 | Réglage | Valeur | Où |
 |---|---|---|
-| Fournisseur | Anthropic (Claude), SDK Python `anthropic` | `llm.py` |
-| Modèle | `DORA_MODEL`, `claude-opus-5-5` par défaut | `.env` |
-| Clé | `ANTHROPIC_API_KEY` | `.env` |
-| Effort | `medium` (profondeur de réflexion du modèle) | `llm.py` |
-| `max_tokens` | 16000 | `llm.py` |
-| Repli | `fallbacks="default"` : si le modèle refuse une requête, l'API la rejoue sur un modèle de repli | `llm.py` |
+| Fournisseur | Gemini via le SDK Python `google-genai` | `backend/app/llm.py` |
+| Modèle | `DORA_MODEL`, valeur par défaut `gemini-3.8-flash` | `backend/app/config.py` |
+| Clé | `GEMINI_API_KEY` | `backend/.env` |
+| Client | `genai.Client()` ; le SDK lit automatiquement la clé depuis les variables d'environnement | `backend/app/llm.py` |
+| `max_tokens` | 16000 | `backend/app/llm.py` |
+| Réponse | `interaction.output_text` renvoyée sous forme de texte brut | `backend/app/llm.py` |
+
+Le client est initialisé dans `get_client()`, et `create_message()` compose un
+prompt unique à partir des messages, envoie la requête au modèle courant, puis
+renvoie `interaction.output_text` sans transformation supplémentaire.
 
 ## Prompt des questions / réponses
 
@@ -47,16 +51,18 @@ Question : comment les plantes utilisent-elles la lumière ?
 
 Les numéros `[n]` correspondent aux `numero` des sources renvoyées au frontend.
 
-## Modèles Claude disponibles
+## Modèles Gemini disponibles
 
-Prix en dollars par million de tokens (entrée / sortie) :
+La variable `DORA_MODEL` permet de choisir le modèle Gemini utilisé par le
+backend. Par défaut, le projet cible `gemini-3.8-flash`.
 
-| Modèle | Identifiant | Prix | Usage conseillé |
-|---|---|---|---|
-| Claude Opus 5.5 | `claude-opus-5-5` | 4 $ / 20 $ | meilleure qualité de rédaction |
-| Claude Sonnet 5.5 | `claude-sonnet-5-5` | 2 $ / 10 $ | bon compromis |
-| Claude Haiku 5.5 | `claude-haiku-5-5` | 0,10 $ / 0,50 $ | développement, gros volumes |
-| Claude Fable 5.1 | `claude-fable-5-1` | 10 $ / 50 $ | le plus puissant, surdimensionné ici |
+Exemples de modèles Gemini courants :
+
+| Modèle | Identifiant | Usage conseillé |
+|---|---|---|
+| Gemini 3.8 Flash | `gemini-3.8-flash` | bon compromis pour la rédaction de réponses |
+| Gemini 3.8 Pro | `gemini-3.8-pro` | meilleure qualité, plus coûteux |
+| Gemini 2.5 Flash | `gemini-2.5-flash` | alternative légère et rapide |
 
 Ordre de grandeur : une question avec 5 passages représente environ
 2 000 tokens en entrée et quelques centaines en sortie.
@@ -66,10 +72,10 @@ Ordre de grandeur : une question avec 5 passages représente environ
 | Fournisseur | Type | Remarque |
 |---|---|---|
 | OpenAI (GPT) | API payante | même principe |
-| Google (Gemini) | API payante | même principe |
+| Google (Gemini) | API payante | fournisseur actuel |
 | Mistral | API payante + modèles open source | entreprise française |
 | Ollama (Llama, Mistral, Qwen…) | local, gratuit | demande une machine puissante, qualité moindre |
 
 Pour en ajouter un, il faut réécrire `create_message` dans `llm.py` et adapter
-la lecture de la réponse dans les services. Pour l'instant, ils lisent
-`response.content` et `response.stop_reason` au format Anthropic.
+la lecture de la réponse dans les services. Le code actuel lit directement
+`interaction.output_text` et le renvoie comme texte brut.
