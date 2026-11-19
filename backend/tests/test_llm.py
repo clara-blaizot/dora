@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 from app import llm
 from app.main import app
 from app.rag.vector_store import SearchResult
-from app.schemas import Document
 from app.services import chat as chat_service
 
 
@@ -70,26 +69,24 @@ def test_erreur_claire_si_tout_est_surcharge(faux_gemini):
 
 
 def test_reponse_vide_remplacee(monkeypatch):
-    resultat = SearchResult(document_id="d", filename="cours.pdf", page=1, text="t", score=0.5)
+    resultat = SearchResult(document_id="d", subject_id="maths", filename="cours.pdf", page=1, text="t", score=0.5)
     monkeypatch.setattr(chat_service.vector_store, "search", lambda *a, **k: [resultat])
     monkeypatch.setattr(chat_service, "create_message", lambda **k: "  ")
 
-    doc = Document(id="d", filename="cours.pdf", nb_pages=1, nb_chunks=1)
-    reponse = chat_service.ask("question", [doc])
+    reponse = chat_service.ask("question", "maths")
 
     assert "pas réussi" in reponse.answer
     assert len(reponse.sources) == 1
 
 
 def test_route_chat_renvoie_503(monkeypatch):
-    doc = Document(id="d", filename="cours.pdf", nb_pages=1, nb_chunks=1)
-    monkeypatch.setattr("app.routers.chat.resolve_documents", lambda ids: [doc])
+    monkeypatch.setattr("app.routers.chat.resolve_subject", lambda subject_id: None)
 
-    def indisponible(question, documents):
+    def indisponible(question, subject_id):
         raise llm.LLMIndisponible("surchargé")
 
     monkeypatch.setattr(chat_service, "ask", indisponible)
 
-    r = TestClient(app).post("/chat", json={"question": "?", "document_ids": ["d"]})
+    r = TestClient(app).post("/subjects/maths/ask", json={"question": "?"})
     assert r.status_code == 503
     assert r.json()["detail"] == "surchargé"

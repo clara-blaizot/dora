@@ -5,33 +5,44 @@ async function request(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, options);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail ?? `Erreur ${res.status}`);
+    // FastAPI renvoie soit un texte, soit une liste d'erreurs de validation
+    const detail = typeof body.detail === "string" ? body.detail : null;
+    throw new Error(detail ?? `Erreur ${res.status}`);
   }
   return res.status === 204 ? null : res.json();
 }
 
-const postJson = (path, data) =>
+const sendJson = (method, path, data) =>
   request(path, {
-    method: "POST",
+    method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-export function uploadDocuments(files) {
+// --- Matières ---
+export const listSubjects = () => request("/subjects");
+export const createSubject = (name, color) => sendJson("POST", "/subjects", { name, color });
+export const updateSubject = (id, changes) => sendJson("PATCH", `/subjects/${id}`, changes);
+export const deleteSubject = (id) => request(`/subjects/${id}`, { method: "DELETE" });
+
+// --- Documents ---
+export const listDocuments = () => request("/documents");
+
+export function uploadDocuments(subjectId, files) {
   const form = new FormData();
   for (const f of files) form.append("files", f);
-  return request("/documents", { method: "POST", body: form });
+  return request(`/subjects/${subjectId}/documents`, { method: "POST", body: form });
 }
 
-export const listDocuments = () => request("/documents");
 export const deleteDocument = (id) => request(`/documents/${id}`, { method: "DELETE" });
 export const pdfUrl = (id, page) => `${API_URL}/documents/${id}/pdf#page=${page}`;
 
-export const askQuestion = (question, documentIds) =>
-  postJson("/chat", { question, document_ids: documentIds });
+// --- Questions, fiches, quiz (toujours dans une matière) ---
+export const askQuestion = (subjectId, question) =>
+  sendJson("POST", `/subjects/${subjectId}/ask`, { question });
 
-export const createFiche = (documentIds, sujet) =>
-  postJson("/fiches", { document_ids: documentIds, sujet });
+export const createFiche = (subjectId, sujet) =>
+  sendJson("POST", `/subjects/${subjectId}/fiches`, { sujet });
 
-export const createQuiz = (documentIds, nbQuestions, sujet) =>
-  postJson("/quiz", { document_ids: documentIds, nb_questions: nbQuestions, sujet });
+export const createQuiz = (subjectId, nbQuestions, sujet) =>
+  sendJson("POST", `/subjects/${subjectId}/quiz`, { nb_questions: nbQuestions, sujet });

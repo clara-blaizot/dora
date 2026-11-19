@@ -9,9 +9,9 @@ import CoursesBar from "./components/CoursesBar.jsx";
 const EMPTY_CONVERSATION = { messages: [], panel: { open: false } };
 
 export default function App() {
-  const { subjects, addSubject, addDocs, removeDoc, adoptOrphans } = useSubjects();
-  const [activeId, setActiveId] = useState(subjects[0].id);
-  const [documents, setDocuments] = useState([]); // tous les PDF connus du backend
+  const { subjects, status, addSubject } = useSubjects();
+  const [activeId, setActiveId] = useState(null);
+  const [documents, setDocuments] = useState([]); // tous les PDF, chacun avec son subject_id
   // Conversation de chaque matière (gardée en mémoire, perdue au rechargement)
   const [conversations, setConversations] = useState({});
   const [thinkingId, setThinkingId] = useState(null); // matière qui attend une réponse
@@ -19,16 +19,16 @@ export default function App() {
   const [notice, setNotice] = useState(null);
 
   useEffect(() => {
-    listDocuments()
-      .then((docs) => {
-        setDocuments(docs);
-        adoptOrphans(docs.map((d) => d.id));
-      })
-      .catch(() => setNotice("Impossible de joindre le backend. Est-il lancé ?"));
+    listDocuments().then(setDocuments).catch(() => {});
   }, []);
 
+  if (status === "loading") return <p className="splash">Chargement…</p>;
+  if (status === "error") {
+    return <p className="splash">Impossible de joindre le backend. Est-il lancé sur le port 8000 ?</p>;
+  }
+
   const subject = subjects.find((s) => s.id === activeId) ?? subjects[0];
-  const docs = documents.filter((d) => subject.docIds.includes(d.id));
+  const docs = documents.filter((d) => d.subject_id === subject.id);
   const conversation = conversations[subject.id] ?? EMPTY_CONVERSATION;
 
   const panelMessage = conversation.panel.open
@@ -62,7 +62,7 @@ export default function App() {
 
     setThinkingId(subjectId);
     try {
-      const { answer, sources } = await askQuestion(question, docs.map((d) => d.id));
+      const { answer, sources } = await askQuestion(subjectId, question);
       pushMessage(subjectId, { id: crypto.randomUUID(), role: "dora", text: answer, sources }, sources.length > 0);
     } catch (err) {
       pushMessage(subjectId, { id: crypto.randomUUID(), role: "dora", text: err.message, error: true });
@@ -83,9 +83,8 @@ export default function App() {
     setUploading(true);
     setNotice(null);
     try {
-      const added = await uploadDocuments(files);
+      const added = await uploadDocuments(subject.id, files);
       setDocuments((list) => [...list, ...added]);
-      addDocs(subject.id, added.map((d) => d.id));
     } catch (err) {
       setNotice(err.message);
     } finally {
@@ -98,15 +97,19 @@ export default function App() {
     try {
       await deleteDocument(doc.id);
       setDocuments((list) => list.filter((d) => d.id !== doc.id));
-      removeDoc(doc.id);
     } catch (err) {
       setNotice(err.message);
     }
   }
 
-  function handleAddSubject(name) {
-    setActiveId(addSubject(name));
-    setNotice(null);
+  async function handleAddSubject(name) {
+    try {
+      const created = await addSubject(name);
+      setActiveId(created.id);
+      setNotice(null);
+    } catch (err) {
+      setNotice(err.message);
+    }
   }
 
   function handleSelect(id) {

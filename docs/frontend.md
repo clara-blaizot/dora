@@ -63,9 +63,10 @@ src/
 
 | État | Où | Rôle | Persistance |
 |---|---|---|---|
-| `subjects` | `useSubjects` | `[{id, name, color, docIds}]` | `localStorage` (`dora.subjects`) |
-| `activeId` | `App` | matière affichée | non |
-| `documents` | `App` | tous les PDF renvoyés par `GET /documents` | backend |
+| `subjects` | `useSubjects` | `[{id, name, color}]`, chargées par `GET /subjects` | backend |
+| `status` | `useSubjects` | `loading` / `ready` / `error` (backend injoignable) | non |
+| `activeId` | `App` | matière affichée (la première par défaut) | non |
+| `documents` | `App` | tous les PDF (`GET /documents`), filtrés par `subject_id` pour l'affichage | backend |
 | `conversations` | `App` | `{[subjectId]: {messages, panel}}` | non, perdu au rechargement |
 | `thinkingId` | `App` | matière qui attend une réponse (« Dora réfléchit… ») | non |
 | `notice` | `App` | message d'erreur (import, backend injoignable) | non |
@@ -83,35 +84,35 @@ matière d'origine.
 { id, role: "dora", text, sources?: Source[], error?: true }
 ```
 
-`Source` est l'objet renvoyé par `POST /chat` : `{numero, document_id,
-filename, page, text, score}` (voir [api.md](api.md)). `error: true` affiche la
-bulle en orange (backend injoignable, LLM surchargé…).
+`Source` est l'objet renvoyé par `POST /subjects/{id}/ask` : `{numero,
+document_id, filename, page, text, score}` (voir [api.md](api.md)).
+`error: true` affiche la bulle en orange (backend injoignable, LLM surchargé…).
 
-## Matières : gérées côté navigateur
+## Matières
 
-Le backend ne connaît pas les matières : il ne connaît que des PDF. Le
-frontend associe donc chaque PDF à une matière et envoie à `POST /chat` les
-`document_ids` de la matière active.
+Les matières sont stockées dans le **backend** (voir [api.md](api.md)) :
 
-Conséquences :
+- Au chargement, `useSubjects` appelle `GET /subjects`. Si la liste est vide
+  (premier lancement), il crée « Ma matière ». Le chargement est partagé pour
+  ne pas créer deux matières à cause du double appel des effets de React en
+  développement (`StrictMode`).
+- « Nouvelle matière » appelle `POST /subjects`, avec une couleur prise dans
+  une palette.
+- Un PDF est importé **dans** la matière active (`POST /subjects/{id}/documents`).
+- Une question est posée **à** la matière active (`POST /subjects/{id}/ask`).
+  C'est le backend qui garantit que seuls ses PDF sont utilisés.
+- Si le backend est injoignable au chargement, l'écran affiche un message à la
+  place de l'application.
 
-- Les matières sont propres à chaque navigateur. Un autre navigateur ou
-  ordinateur ne les voit pas.
-- Un PDF présent dans le backend mais rangé dans aucune matière (importé
-  avant cette version, ou depuis un autre navigateur) est rangé
-  automatiquement dans la **première matière**.
-- On ne peut pas encore renommer, supprimer ou recolorer une matière.
-
-Piste : ajouter les matières au backend (`/subjects`, avec un `subject_id`
-dans le payload Qdrant). Le hook `useSubjects` serait alors remplacé par des
-appels à l'API.
+Pas encore dans l'interface (mais déjà dans l'API) : renommer, recolorer ou
+supprimer une matière (`PATCH` / `DELETE /subjects/{id}`).
 
 ## Ajouter une fonctionnalité (ex. brancher Fiche ou Quiz)
 
-1. Ajouter ou utiliser la fonction d'appel dans `api.js` (`createFiche` et
-   `createQuiz` existent déjà).
+1. Utiliser la fonction d'appel dans `api.js` (`createFiche(subjectId, sujet)`
+   et `createQuiz(subjectId, nbQuestions, sujet)` existent déjà).
 2. Dans `ChatPanel.jsx`, retirer `disabled` et le badge « bientôt » du bouton.
    Ajouter un `onClick` remonté à `App.jsx`.
-3. Dans `App.jsx`, appeler l'API avec `docs.map((d) => d.id)` et afficher le
-   résultat (nouveau composant dans `components/`).
+3. Dans `App.jsx`, appeler l'API avec `subject.id` et afficher le résultat
+   (nouveau composant dans `components/`).
 4. Mettre à jour cette page.

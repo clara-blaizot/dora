@@ -73,6 +73,7 @@ Chaque morceau devient un point Qdrant :
   "vector": [0.012, -0.08, ...],
   "payload": {
     "document_id": "a1cc…",
+    "subject_id": "725d…",
     "filename": "cours.pdf",
     "page": 2,
     "text": "La photosynthèse transforme…"
@@ -86,11 +87,13 @@ Elle est créée automatiquement au premier accès.
 ## 2. Recherche : `vector_store.search`
 
 ```
-question ──► embed ──► Qdrant.query_points(filtre document_id ∈ PDF cochés, limit=RAG_TOP_K)
+question ──► embed ──► Qdrant.query_points(filtre subject_id = matière, limit=RAG_TOP_K)
 ```
 
-- Seuls les PDF sélectionnés dans l'interface sont cherchés (filtre `MatchAny`).
-- Le résultat est une liste de `SearchResult(document_id, filename, page, text, score)`.
+- Seuls les PDF de la **matière interrogée** sont cherchés (filtre
+  `subject_id`). Dans « Physique », un passage de maths ne peut jamais
+  remonter, même si la question parle de maths.
+- Le résultat est une liste de `SearchResult(document_id, subject_id, filename, page, text, score)`.
 - `score` est la similarité cosinus : plus elle est haute, plus le passage est proche.
 - `RAG_TOP_K` (8 par défaut) règle le nombre de passages renvoyés. Les
   morceaux étant courts, il en faut 8 pour donner assez de contexte au LLM
@@ -99,6 +102,10 @@ question ──► embed ──► Qdrant.query_points(filtre document_id ∈ PD
 ## 3. Suppression : `vector_store.delete_document`
 
 Elle supprime tous les points dont `document_id` correspond.
+
+`vector_store.set_subject(document_id, subject_id)` range tous les morceaux
+d'un document dans une matière. Elle sert à la migration des PDF importés
+avant l'existence des matières.
 
 ## Qdrant : local ou serveur
 

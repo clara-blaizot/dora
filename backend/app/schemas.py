@@ -3,10 +3,32 @@
 from pydantic import BaseModel, Field
 
 
+# --- Matières ----------------------------------------------------------------
+
+COULEUR = r"^#[0-9A-Fa-f]{6}$"
+
+
+class Subject(BaseModel):
+    id: str
+    name: str
+    color: str  # couleur d'affichage, ex. "#D6336C"
+
+
+class SubjectCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    color: str = Field(default="#D6336C", pattern=COULEUR)
+
+
+class SubjectUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    color: str | None = Field(default=None, pattern=COULEUR)
+
+
 # --- Documents ---------------------------------------------------------------
 
 class Document(BaseModel):
     id: str
+    subject_id: str  # chaque PDF appartient à une seule matière
     filename: str
     nb_pages: int
     nb_chunks: int  # nombre de morceaux indexés dans Qdrant
@@ -14,9 +36,8 @@ class Document(BaseModel):
 
 # --- Questions / réponses ----------------------------------------------------
 
-class ChatRequest(BaseModel):
-    question: str
-    document_ids: list[str] = Field(min_length=1)
+class AskRequest(BaseModel):
+    question: str = Field(min_length=1)
 
 
 class Source(BaseModel):
@@ -37,7 +58,6 @@ class ChatResponse(BaseModel):
 # --- Fiches de révision ------------------------------------------------------
 
 class FicheRequest(BaseModel):
-    document_ids: list[str] = Field(min_length=1)
     sujet: str | None = None  # restreindre la fiche à un chapitre / thème
 
 
@@ -49,7 +69,6 @@ class Fiche(BaseModel):
 # --- Quiz --------------------------------------------------------------------
 
 class QuizRequest(BaseModel):
-    document_ids: list[str] = Field(min_length=1)
     nb_questions: int = Field(default=10, ge=1, le=50)
     sujet: str | None = None
 
