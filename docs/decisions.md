@@ -6,6 +6,23 @@ entrée plutôt que d'effacer l'ancienne.
 
 ---
 
+## 2026-11-02 — Gemini remplace Claude comme LLM de rédaction
+
+**Décision :** le projet utilise désormais Gemini via le SDK `google-genai`,
+avec `GEMINI_API_KEY` lu depuis `backend/.env` et le modèle défini par
+`DORA_MODEL` (par défaut : `gemini-3.8-flash`). Tout l'accès au LLM reste
+centralisé dans `backend/app/llm.py`.
+**Pourquoi :** l'API Gemini propose une offre **gratuite** (avec des limites
+de requêtes), alors que l'API Claude est payante dès le premier appel. Pour un
+projet étudiant sans budget, on peut ainsi développer et tester sans frais.
+Comme le LLM ne fait que rédiger à partir des passages trouvés par le RAG, un
+modèle « Flash » suffit.
+**Conséquences :** il faut surveiller les limites de l'offre gratuite. Si elles
+deviennent bloquantes, ou si la qualité ne suffit pas, il suffira de changer
+`llm.py` (voir [llm.md](llm.md)).
+**Remplace :** la décision « Claude comme LLM de rédaction » du 2026-11-01,
+conservée plus bas à titre historique.
+
 ## 2026-11-01 — Documentation dans `docs/`
 
 **Décision :** la documentation est écrite en Markdown dans `docs/`, une page
@@ -51,20 +68,7 @@ bon endroit.
 `DORA_MODEL`. Tout l'accès au LLM est isolé dans `app/llm.py`.
 **Pourquoi :** bonne qualité en français. Isoler l'accès dans un fichier
 permet de changer de fournisseur facilement (voir [llm.md](llm.md)).
-**Historique :** cette décision a été remplacée par l'intégration Gemini, mais
-elle reste conservée comme référence de la première implémentation.
-
-## 2026-11-02 — Gemini remplace Claude comme LLM de rédaction
-
-**Décision :** le projet utilise désormais le SDK `google-genai` pour Gemini,
-avec `GEMINI_API_KEY` lu depuis `backend/.env` et le modèle défini par
-`DORA_MODEL` (par défaut : `gemini-3.8-flash`). Tout l'accès au LLM reste
-centralisé dans `backend/app/llm.py`.
-**Pourquoi :** le fournisseur actuel est celui implémenté dans le code, avec un
-accès simple via `genai.Client()` et une sortie texte brute via
-`interaction.output_text`.
-**Remplace :** la décision antérieure sur Claude / Anthropic, conservée ici à
-titre historique.
+**Historique :** remplacée le 2026-11-02 par Gemini (voir l'entrée en haut).
 
 ## 2026-11-01 — Stack : FastAPI + React (Vite)
 

@@ -56,6 +56,10 @@ Les numéros `[n]` correspondent aux `numero` des sources renvoyées au frontend
 La variable `DORA_MODEL` permet de choisir le modèle Gemini utilisé par le
 backend. Par défaut, le projet cible `gemini-3.8-flash`.
 
+**Pourquoi Gemini :** l'API propose une offre gratuite (avec des limites de
+requêtes), ce qui permet de développer et tester Dora sans frais. Les détails
+sont dans [decisions.md](decisions.md).
+
 Exemples de modèles Gemini courants :
 
 | Modèle | Identifiant | Usage conseillé |
