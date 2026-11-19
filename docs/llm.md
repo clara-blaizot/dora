@@ -18,14 +18,58 @@ Pour changer de modèle ou de fournisseur, on ne modifie que ce fichier.
 |---|---|---|
 | Fournisseur | Gemini via le SDK Python `google-genai` | `backend/app/llm.py` |
 | Modèle | `DORA_MODEL`, valeur par défaut `gemini-3.8-flash` | `backend/app/config.py` |
+| Modèle de secours | `DORA_FALLBACK_MODEL`, valeur par défaut `gemini-3.1-flash-lite` (vide = désactivé) | `backend/app/config.py` |
+| Délai max | `LLM_TIMEOUT`, 60 secondes par tentative | `backend/app/config.py` |
+| Essais | 2 par modèle (`HttpRetryOptions(attempts=2)`) | `backend/app/llm.py` |
 | Clé | `GEMINI_API_KEY` | `backend/.env` |
 | Client | `genai.Client()` ; le SDK lit automatiquement la clé depuis les variables d'environnement | `backend/app/llm.py` |
 | `max_tokens` | 16000 | `backend/app/llm.py` |
 | Réponse | `interaction.output_text` renvoyée sous forme de texte brut | `backend/app/llm.py` |
 
 Le client est initialisé dans `get_client()`, et `create_message()` compose un
-prompt unique à partir des messages, envoie la requête au modèle courant, puis
-renvoie `interaction.output_text` sans transformation supplémentaire.
+prompt unique à partir des messages, l'envoie au modèle, puis renvoie
+`interaction.output_text` sans transformation supplémentaire.
+
+## Modèle surchargé, quota, réseau
+
+Les modèles Gemini, surtout avec l'offre gratuite, sont souvent **surchargés**.
+L'API répond alors par une erreur 503 (« experiencing high demand »), ou ne
+répond pas du tout. Sans réglage, le SDK réessaie en boucle **sans rien
+afficher**, et l'appel semble bloqué indéfiniment.
+
+Ce que fait `create_message()` :
+
+1. Il essaie `DORA_MODEL`, 2 fois au maximum, avec un délai de `LLM_TIMEOUT` secondes.
+2. En cas d'erreur passagère (429 quota, 5xx surcharge, délai dépassé, réseau),
+   il passe à `DORA_FALLBACK_MODEL`. Ces erreurs sont listées dans `ERREURS_TEMPORAIRES`.
+3. Si le secours échoue aussi, il lève `LLMIndisponible`. La route `/chat` la
+   transforme en **code 503** avec un message en français, que le frontend
+   affiche dans la bulle de Dora.
+
+Les autres erreurs (clé invalide, modèle inexistant…) ne déclenchent pas le
+secours : ce sont des erreurs de configuration, à corriger dans `.env`.
+
+Si Gemini renvoie une réponse **vide** (réponse bloquée par exemple),
+`services/chat.py` la remplace par un message invitant à reformuler. Les
+sources restent affichées.
+
+**Constaté le 2026-11-19 :** `gemini-3.8-flash`, `3.7-flash`, `3.6-flash` et
+`3.5-flash` étaient surchargés, tandis que `gemini-3.1-flash-lite` et
+`3.5-flash-lite` répondaient en quelques secondes. Si la surcharge dure, mettez
+`DORA_MODEL=gemini-3.1-flash-lite` dans votre `.env` pour éviter d'attendre
+le délai à chaque question.
+
+**Tester sa clé et le modèle** (depuis `backend/`) :
+
+```bash
+.venv/bin/python -c "from app.llm import create_message; print(create_message(system='Réponds en une phrase.', messages=[{'role': 'user', 'content': 'Dis bonjour.'}]))"
+```
+
+Pour lister les modèles accessibles avec votre clé :
+
+```bash
+.venv/bin/python -c "from app.llm import get_client; print([m.name for m in get_client().models.list()])"
+```
 
 ## Prompt des questions / réponses
 
@@ -68,8 +112,8 @@ Exemples de modèles Gemini courants :
 | Gemini 3.8 Pro | `gemini-3.8-pro` | meilleure qualité, plus coûteux |
 | Gemini 2.5 Flash | `gemini-2.5-flash` | alternative légère et rapide |
 
-Ordre de grandeur : une question avec 5 passages représente environ
-2 000 tokens en entrée et quelques centaines en sortie.
+Ordre de grandeur : une question avec 8 passages de 350 caractères représente
+environ 1 000 à 1 500 tokens en entrée et quelques centaines en sortie.
 
 ## Autres fournisseurs possibles
 

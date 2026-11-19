@@ -38,4 +38,8 @@ def ask(question: str, documents: list[Document]) -> ChatResponse:
         }],
     )
 
+    if not answer.strip():
+        # Réponse bloquée par Gemini ou vide : on garde quand même les sources
+        answer = "Je n'ai pas réussi à rédiger de réponse. Réessaie ou reformule ta question."
+
     return ChatResponse(answer=answer, sources=sources)

@@ -46,11 +46,13 @@ Tableau de bord : http://localhost:6333/dashboard
 |---|---|---|
 | `GEMINI_API_KEY` | – | clé de l'API Gemini |
 | `DORA_MODEL` | `gemini-3.8-flash` | modèle de rédaction ([llm.md](llm.md)) |
+| `DORA_FALLBACK_MODEL` | `gemini-3.1-flash-lite` | modèle de secours si le premier est surchargé (vide = aucun) |
+| `LLM_TIMEOUT` | `60` | délai max d'un appel au LLM, en secondes |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | origine autorisée (CORS) |
 | `EMBEDDING_MODEL` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | modèle d'embeddings ([rag.md](rag.md)) |
 | `QDRANT_URL` | vide (mode local) | adresse d'un serveur Qdrant |
 | `QDRANT_COLLECTION` | `cours` | nom de la collection |
-| `RAG_TOP_K` | `5` | nombre de passages par question |
+| `RAG_TOP_K` | `8` | nombre de passages par question |
 
 ## Tests
 
@@ -62,7 +64,8 @@ pytest
 | Fichier | Ce qui est testé |
 |---|---|
 | `tests/test_api.py` | santé, document inconnu (404), refus des fichiers non PDF |
-| `tests/test_rag.py` | découpage par page, recherche filtrée, suppression (Qdrant en mémoire) |
+| `tests/test_rag.py` | découpage par page, taille des morceaux (128 tokens), recherche filtrée, suppression (Qdrant en mémoire) |
+| `tests/test_llm.py` | modèle de secours, erreur 503, réponse vide (Gemini simulé, sans clé) |
 
 Au premier lancement, le modèle d'embeddings est téléchargé, ce qui prend
 environ une minute.
