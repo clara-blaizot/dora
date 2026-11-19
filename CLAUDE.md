@@ -12,3 +12,14 @@ Vue d'ensemble : `docs/architecture.md`.
 - La recherche des passages (`app/rag/`) n'utilise jamais de LLM. Le LLM
   (`app/llm.py`) sert uniquement à rédiger.
 - Tests : `cd backend && .venv/bin/pytest`
+
+## Secrets
+
+- Ne jamais lire, afficher, copier ni modifier les fichiers `.env` (`backend/.env`,
+  `frontend/.env`, ou tout autre `.env*` sauf `.env.example`), que ce soit avec
+  un outil de lecture ou une commande shell (`cat`, `grep`, `source`, etc.).
+  Les outils de lecture et d'écriture sont aussi bloqués par les règles `deny`
+  de `.claude/settings.json`.
+- Pour savoir quelles variables existent, se référer aux `.env.example`.
+- Si une valeur du `.env` est nécessaire, demander à l'utilisatrice de vérifier
+  elle-même.
