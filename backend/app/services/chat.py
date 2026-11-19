@@ -30,7 +30,7 @@ def ask(question: str, documents: list[Document]) -> ChatResponse:
     extraits = "\n\n".join(
         f"[{s.numero}] ({s.filename}, page {s.page})\n{s.text}" for s in sources
     )
-    response = create_message(
+    answer = create_message(
         system=SYSTEM_PROMPT,
         messages=[{
             "role": "user",
@@ -38,8 +38,8 @@ def ask(question: str, documents: list[Document]) -> ChatResponse:
         }],
     )
 
-    if response.stop_reason == "refusal":
-        return ChatResponse(answer="Je ne peux pas répondre à cette question.", sources=sources)
+    if not answer.strip():
+        # Réponse bloquée par Gemini ou vide : on garde quand même les sources
+        answer = "Je n'ai pas réussi à rédiger de réponse. Réessaie ou reformule ta question."
 
-    answer = "".join(block.text for block in response.content if block.type == "text")
     return ChatResponse(answer=answer, sources=sources)

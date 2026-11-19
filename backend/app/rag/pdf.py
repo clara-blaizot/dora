@@ -6,8 +6,10 @@ from dataclasses import dataclass
 
 from pypdf import PdfReader
 
-CHUNK_SIZE = 1000  # caractères
-CHUNK_OVERLAP = 200
+# Le modèle d'embeddings ne lit que 128 tokens : au-delà de ~350 caractères de
+# français, la fin du morceau serait ignorée par la recherche (voir docs/rag.md).
+CHUNK_SIZE = 350  # caractères
+CHUNK_OVERLAP = 70
 
 
 @dataclass

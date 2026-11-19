@@ -84,6 +84,11 @@ Réponse `200` :
 
 - `sources` vient de la recherche Qdrant (sans LLM). `answer` vient du LLM.
 - `document_ids` doit contenir au moins un id. Code `404` si un id est inconnu.
+- Code `503` si le LLM est indisponible (modèle principal et modèle de secours
+  surchargés, quota atteint ou réseau). `detail` contient un message en français
+  à afficher tel quel.
+- Si le LLM renvoie une réponse vide, `answer` contient un message de repli et
+  `sources` reste rempli.
 
 ## Fiches de révision (à implémenter)
 

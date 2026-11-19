@@ -7,8 +7,8 @@
 │  Frontend    │ ────────────► │  Backend (FastAPI)                        │
 │  React/Vite  │               │                                           │
 │  :5173       │ ◄──────────── │  routers/  →  services/  →  rag/  → Qdrant│
-└──────────────┘               │                          →  llm.py → API  │
-                               │  :8000                       (Claude)     │
+└──────────────┘               │                          →  llm.py → Gemini │
+                               │  :8000                                     │
                                └───────────────────────────────────────────┘
 ```
 

@@ -1,36 +1,66 @@
-"""Point d'accès unique au LLM.
+"""Point d'accès unique au LLM Gemini."""
 
-Le LLM ne sert qu'à rédiger (réponses, fiches, quiz) : la recherche des
-passages se fait dans app/rag. Pour changer de fournisseur de LLM, il suffit
-de modifier ce fichier.
-"""
-
+import logging
 from functools import lru_cache
 
-import anthropic
+from google import genai
+from google.genai import types
+# Erreurs de l'API Interactions : le SDK ne les expose pas dans un module public
+from google.genai import _interactions_errors as gemini_errors
 
-from app.config import MODEL
+from app.config import FALLBACK_MODEL, LLM_TIMEOUT, MODEL
+
+logger = logging.getLogger(__name__)
+
+# Erreurs passagères : 429 (quota), 5xx (modèle surchargé), délai dépassé, réseau
+ERREURS_TEMPORAIRES = (
+    gemini_errors.RateLimitError,
+    gemini_errors.InternalServerError,
+    gemini_errors.APIConnectionError,
+)
+
+
+class LLMIndisponible(Exception):
+    """Aucun modèle n'a pu répondre (surcharge, quota ou réseau)."""
 
 
 @lru_cache
-def get_client() -> anthropic.Anthropic:
-    # La clé est lue depuis ANTHROPIC_API_KEY (voir .env.example)
-    return anthropic.Anthropic()
+def get_client() -> genai.Client:
+    # Le client lit GEMINI_API_KEY depuis les variables d'environnement.
+    # Sans limite, le SDK réessaie en boucle quand le modèle est surchargé
+    # et l'appel semble bloqué : on borne le délai et le nombre d'essais.
+    return genai.Client(http_options=types.HttpOptions(
+        timeout=LLM_TIMEOUT * 1000,
+        retry_options=types.HttpRetryOptions(attempts=2),
+    ))
 
 
-def create_message(*, system: str, messages: list[dict], max_tokens: int = 16000, **kwargs):
-    """Appelle Claude avec les réglages par défaut de Dora.
-
-    `fallbacks="default"` : si le modèle refuse une requête, l'API la rejoue
-    automatiquement sur un modèle de repli.
-    """
-    return get_client().beta.messages.create(
-        model=MODEL,
-        max_tokens=max_tokens,
-        system=system,
-        messages=messages,
-        output_config={"effort": "medium"},
-        betas=["server-side-fallback-2026-07-01"],
-        fallbacks="default",
-        **kwargs,
+def create_message(
+    *,
+    system: str,
+    messages: list[dict],
+    max_tokens: int = 16000,
+) -> str:
+    """Envoie la requête à MODEL, puis à FALLBACK_MODEL si MODEL est indisponible."""
+    prompt = "\n\n".join(
+        f"{message['role']}:\n{message['content']}"
+        for message in messages
     )
+
+    modeles = [m for m in dict.fromkeys([MODEL, FALLBACK_MODEL]) if m]
+    for model in modeles:
+        try:
+            interaction = get_client().interactions.create(
+                model=model,
+                system_instruction=system,
+                input=prompt,
+                generation_config={"max_output_tokens": max_tokens},
+            )
+            return interaction.output_text or ""
+        except ERREURS_TEMPORAIRES as e:
+            logger.warning("Modèle %s indisponible : %s", model, e)
+            derniere_erreur = e
+
+    raise LLMIndisponible(
+        "Le modèle de rédaction est surchargé ou injoignable. Réessaie dans quelques minutes."
+    ) from derniere_erreur

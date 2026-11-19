@@ -6,6 +6,52 @@ entrée plutôt que d'effacer l'ancienne.
 
 ---
 
+## 2026-11-19 — Modèle de secours et délai max pour Gemini
+
+**Décision :** chaque appel au LLM a un délai max (`LLM_TIMEOUT`, 60 s) et au
+plus 2 essais. En cas de surcharge, de quota atteint ou de problème réseau, on
+passe à `DORA_FALLBACK_MODEL` (`gemini-3.1-flash-lite`). Si lui aussi échoue,
+`/chat` renvoie une erreur 503 avec un message clair.
+**Pourquoi :** au premier essai réel, la commande de test semblait « ne rien
+faire ». En réalité, `gemini-3.8-flash` était surchargé (503 « high demand »)
+ou ne répondait pas, et le SDK réessayait en boucle, sans limite et sans rien
+afficher. Les modèles Flash-Lite, eux, répondaient en quelques secondes.
+**Alternatives :** passer directement à Flash-Lite par défaut. Écarté pour
+l'instant, car la surcharge de Flash est sans doute passagère et Flash donne
+de meilleures réponses. Chacune peut changer `DORA_MODEL` dans son `.env`.
+
+## 2026-11-19 — Morceaux de 350 caractères, 8 passages par question
+
+**Décision :** `CHUNK_SIZE` passe de 1000 à 350 caractères (chevauchement de
+200 à 70), et `RAG_TOP_K` de 5 à 8.
+**Pourquoi :** le modèle d'embeddings ne lit que les 128 premiers tokens d'un
+texte. Avec 1000 caractères, environ la moitié de chaque morceau était ignorée
+par la recherche. Mesures sur des cours en français : 128 tokens ≈ 470
+caractères de texte courant, mais seulement ≈ 330 caractères de texte dense en
+formules. 350 est un compromis. Comme chaque morceau est plus court, on en
+renvoie 8 au lieu de 5 pour garder assez de contexte au LLM.
+**Conséquences :** les PDF importés avant ce changement doivent être
+réimportés (supprimer `backend/data/` puis réimporter).
+**Alternatives écartées pour l'instant :** `multilingual-e5-large` (lit 512
+tokens mais pèse ~2 Go) ; la technique « small-to-big » (plus complexe).
+
+## 2026-11-02 — Gemini remplace Claude comme LLM de rédaction
+
+**Décision :** le projet utilise désormais Gemini via le SDK `google-genai`,
+avec `GEMINI_API_KEY` lu depuis `backend/.env` et le modèle défini par
+`DORA_MODEL` (par défaut : `gemini-3.8-flash`). Tout l'accès au LLM reste
+centralisé dans `backend/app/llm.py`.
+**Pourquoi :** l'API Gemini propose une offre **gratuite** (avec des limites
+de requêtes), alors que l'API Claude est payante dès le premier appel. Pour un
+projet étudiant sans budget, on peut ainsi développer et tester sans frais.
+Comme le LLM ne fait que rédiger à partir des passages trouvés par le RAG, un
+modèle « Flash » suffit.
+**Conséquences :** il faut surveiller les limites de l'offre gratuite. Si elles
+deviennent bloquantes, ou si la qualité ne suffit pas, il suffira de changer
+`llm.py` (voir [llm.md](llm.md)).
+**Remplace :** la décision « Claude comme LLM de rédaction » du 2026-11-01,
+conservée plus bas à titre historique.
+
 ## 2026-11-01 — Documentation dans `docs/`
 
 **Décision :** la documentation est écrite en Markdown dans `docs/`, une page
@@ -41,7 +87,7 @@ utilisait ses citations natives.
 ## 2026-11-01 — Découpage page par page
 
 **Décision :** morceaux de 1000 caractères avec un chevauchement de 200, sans
-jamais dépasser une page.
+jamais dépasser une page. (Taille réduite à 350 le 2026-11-19, voir plus haut.)
 **Pourquoi :** chaque source a un numéro de page exact, pour ouvrir le PDF au
 bon endroit.
 
@@ -51,6 +97,7 @@ bon endroit.
 `DORA_MODEL`. Tout l'accès au LLM est isolé dans `app/llm.py`.
 **Pourquoi :** bonne qualité en français. Isoler l'accès dans un fichier
 permet de changer de fournisseur facilement (voir [llm.md](llm.md)).
+**Historique :** remplacée le 2026-11-02 par Gemini (voir l'entrée en haut).
 
 ## 2026-11-01 — Stack : FastAPI + React (Vite)
 
