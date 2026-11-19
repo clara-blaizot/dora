@@ -6,6 +6,23 @@ entrée plutôt que d'effacer l'ancienne.
 
 ---
 
+## 2026-11-19 — Nouveau frontend d'après la maquette, matières côté navigateur
+
+**Décision :** le frontend est réécrit en React d'après `dora-maquette.html` :
+matières dans la barre latérale, chat au centre, volet Sources ouvert par les
+citations, barre « Mes cours ». Les matières (et la liste des PDF de chacune)
+sont gérées dans le navigateur (`localStorage`), le backend n'est pas modifié.
+Fiche et Quiz sont affichés mais désactivés (« bientôt »).
+**Pourquoi :** la maquette organise les cours par matière, ce que le backend
+ne gère pas encore. Les gérer côté navigateur permet d'avancer le frontend
+sans toucher au backend, puisque `/chat` accepte déjà une liste de
+`document_ids`.
+**Conséquences :** les matières ne sont pas partagées entre navigateurs. Les
+PDF sans matière sont rangés dans la première matière. Voir
+[frontend.md](frontend.md).
+**Écarté pour l'instant :** TypeScript (suggéré par la maquette). On reste en
+JavaScript, comme le reste du frontend.
+
 ## 2026-11-19 — Modèle de secours et délai max pour Gemini
 
 **Décision :** chaque appel au LLM a un délai max (`LLM_TIMEOUT`, 60 s) et au

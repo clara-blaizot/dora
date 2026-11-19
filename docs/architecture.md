@@ -47,9 +47,11 @@ dora/
 ├── frontend/
 │   └── src/
 │       ├── api.js             tous les appels au backend
-│       ├── App.jsx            mise en page + onglets
-│       └── components/
+│       ├── App.jsx            état global + mise en page (matières, chat, sources, cours)
+│       ├── hooks/             useSubjects : matières gérées dans le navigateur
+│       └── components/        Sidebar, ChatPanel, SourcesPanel, CoursesBar
 ├── docs/                      cette documentation
+├── dora-maquette.html         maquette de référence du frontend
 └── docker-compose.yml         Qdrant serveur (optionnel)
 ```
 

@@ -21,8 +21,9 @@ lui poser des questions, générer des fiches de révision ou des quiz.
 |---|---|
 | Import de plusieurs PDF, indexation dans Qdrant | ✅ fait |
 | Questions / réponses avec sources (RAG) | ✅ version de base |
-| Fiches de révision | 🚧 squelette (route + écran vides) |
-| Quiz | 🚧 squelette (route + écran vides) |
+| Interface d'après la maquette (matières, chat, volet Sources) | ✅ fait |
+| Fiches de révision | 🚧 route vide, bouton désactivé (« bientôt ») |
+| Quiz | 🚧 route vide, bouton désactivé (« bientôt ») |
 
 ## Tenir la documentation à jour
 
