@@ -42,7 +42,7 @@ Ce que fait `create_message()` :
 1. Il essaie `DORA_MODEL`, 2 fois au maximum, avec un délai de `LLM_TIMEOUT` secondes.
 2. En cas d'erreur passagère (429 quota, 5xx surcharge, délai dépassé, réseau),
    il passe à `DORA_FALLBACK_MODEL`. Ces erreurs sont listées dans `ERREURS_TEMPORAIRES`.
-3. Si le secours échoue aussi, il lève `LLMIndisponible`. La route `/chat` la
+3. Si le secours échoue aussi, il lève `LLMIndisponible`. La route `/subjects/{id}/ask` la
    transforme en **code 503** avec un message en français, que le frontend
    affiche dans la bulle de Dora.
 

@@ -1,10 +1,20 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import FRONTEND_ORIGIN
-from app.routers import chat, documents, fiches, quiz
+from app.routers import chat, documents, fiches, quiz, subjects
+from app.services import subjects as subjects_service
 
-app = FastAPI(title="Dora", description="Assistant de révision pour étudiants")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    subjects_service.migrate_orphan_documents()
+    yield
+
+
+app = FastAPI(title="Dora", description="Assistant de révision pour étudiants", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,6 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(subjects.router)
 app.include_router(documents.router)
 app.include_router(chat.router)
 app.include_router(fiches.router)

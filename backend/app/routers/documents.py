@@ -1,28 +1,17 @@
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from app.config import UPLOAD_DIR
 from app.schemas import Document
 from app.services import documents as documents_service
 
+# L'import se fait par matière : POST /subjects/{id}/documents
 router = APIRouter(prefix="/documents", tags=["documents"])
-
-
-@router.post("", response_model=list[Document])
-async def upload_documents(files: list[UploadFile]):
-    docs = []
-    for f in files:
-        if f.content_type != "application/pdf":
-            raise HTTPException(status_code=400, detail=f"{f.filename} n'est pas un PDF")
-        try:
-            docs.append(documents_service.add_document(f.filename, await f.read()))
-        except documents_service.EmptyPdfError as e:
-            raise HTTPException(status_code=422, detail=str(e))
-    return docs
 
 
 @router.get("", response_model=list[Document])
 def list_documents():
+    """Tous les PDF, toutes matières confondues."""
     return documents_service.list_documents()
 
 

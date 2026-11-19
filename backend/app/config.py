@@ -18,6 +18,7 @@ FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
 DATA_DIR = BACKEND_DIR / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"
 DOCUMENTS_INDEX = DATA_DIR / "documents.json"
+SUBJECTS_INDEX = DATA_DIR / "subjects.json"
 
 # RAG
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")

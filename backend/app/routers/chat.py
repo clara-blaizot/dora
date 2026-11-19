@@ -1,17 +1,18 @@
 from fastapi import APIRouter, HTTPException
 
 from app.llm import LLMIndisponible
-from app.routers.deps import resolve_documents
-from app.schemas import ChatRequest, ChatResponse
+from app.routers.deps import resolve_subject
+from app.schemas import AskRequest, ChatResponse
 from app.services import chat as chat_service
 
-router = APIRouter(prefix="/chat", tags=["chat"])
+router = APIRouter(prefix="/subjects", tags=["questions"])
 
 
-@router.post("", response_model=ChatResponse)
-def ask(req: ChatRequest):
-    documents = resolve_documents(req.document_ids)
+@router.post("/{subject_id}/ask", response_model=ChatResponse)
+def ask(subject_id: str, req: AskRequest):
+    """Répond à partir des seuls PDF de la matière."""
+    resolve_subject(subject_id)
     try:
-        return chat_service.ask(req.question, documents)
+        return chat_service.ask(req.question, subject_id)
     except LLMIndisponible as e:
         raise HTTPException(status_code=503, detail=str(e))

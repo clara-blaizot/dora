@@ -63,8 +63,9 @@ pytest
 
 | Fichier | Ce qui est testé |
 |---|---|
-| `tests/test_api.py` | santé, document inconnu (404), refus des fichiers non PDF |
-| `tests/test_rag.py` | découpage par page, taille des morceaux (128 tokens), recherche filtrée, suppression (Qdrant en mémoire) |
+| `tests/conftest.py` | (pas de test) chaque test a ses données dans un dossier temporaire + un Qdrant en mémoire ; `make_pdf` fabrique des PDF de test |
+| `tests/test_api.py` | matières (création, modification, suppression avec ses PDF), matière inconnue (404), refus des non-PDF, **isolation : une question dans une matière n'utilise que ses PDF**, migration des PDF sans matière |
+| `tests/test_rag.py` | découpage par page, taille des morceaux (128 tokens), recherche filtrée par matière, suppression, changement de matière (Qdrant en mémoire) |
 | `tests/test_llm.py` | modèle de secours, erreur 503, réponse vide (Gemini simulé, sans clé) |
 
 Au premier lancement, le modèle d'embeddings est téléchargé, ce qui prend

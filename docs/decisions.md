@@ -6,6 +6,36 @@ entrée plutôt que d'effacer l'ancienne.
 
 ---
 
+## 2026-11-19 — Les matières sont gérées par le backend
+
+**Décision :** une matière (`Subject` : id, nom, couleur) regroupe des PDF, et
+chaque PDF appartient à une seule matière. Les routes passent par la matière :
+`POST /subjects/{id}/documents` pour importer, `POST /subjects/{id}/ask` pour
+poser une question, et de même pour les fiches et les quiz. Le `subject_id`
+est stocké dans le payload Qdrant, et la recherche filtre dessus.
+`POST /documents` et `POST /chat` (avec une liste de `document_ids`) sont
+supprimées.
+**Pourquoi :** dans une matière, Dora ne doit utiliser que les cours de cette
+matière. C'est maintenant le backend qui le garantit, et non le frontend. Les
+matières sont aussi partagées entre navigateurs et ordinateurs, et ne se
+perdent pas si on vide les données du navigateur.
+**Remplace :** une première version, jamais fusionnée, gérait les matières
+dans le navigateur (`localStorage`) et envoyait des `document_ids` à `/chat`.
+**Migration :** au démarrage, les PDF importés avant ce changement (sans
+`subject_id`) sont rangés dans une matière « Mes cours », dans l'index JSON
+comme dans Qdrant.
+
+## 2026-11-19 — Nouveau frontend d'après la maquette
+
+**Décision :** le frontend est réécrit en React d'après `dora-maquette.html` :
+matières dans la barre latérale, chat au centre, volet Sources ouvert par les
+citations, barre « Mes cours ». Fiche et Quiz sont affichés mais désactivés
+(« bientôt »).
+**Pourquoi :** c'est la maquette validée pour l'interface. Le chat est
+l'élément principal, et les sources ne s'affichent que quand il y en a.
+**Écarté pour l'instant :** TypeScript (suggéré par la maquette). On reste en
+JavaScript, comme le reste du frontend.
+
 ## 2026-11-19 — Modèle de secours et délai max pour Gemini
 
 **Décision :** chaque appel au LLM a un délai max (`LLM_TIMEOUT`, 60 s) et au

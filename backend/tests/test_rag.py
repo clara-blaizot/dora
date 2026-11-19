@@ -1,7 +1,4 @@
-"""Tests du RAG, sans clé API : Qdrant tourne en mémoire."""
-
-import pytest
-from qdrant_client import QdrantClient
+"""Tests du RAG, sans clé API : Qdrant tourne en mémoire (voir conftest.py)."""
 
 from app.rag import vector_store
 from app.rag.pdf import chunk_pages
@@ -39,28 +36,28 @@ def test_morceaux_tiennent_dans_la_fenetre_du_modele():
         assert len(tokenizer.encode(chunk.text).ids) <= 128
 
 
-@pytest.fixture
-def qdrant_memoire(monkeypatch):
-    client = QdrantClient(":memory:")
-    vector_store._ensure_collection(client)
-    monkeypatch.setattr(vector_store, "get_client", lambda: client)
-    return client
-
-
-def test_recherche_trouve_le_bon_passage(qdrant_memoire):
+def test_recherche_limitee_a_la_matiere():
     from app.rag.pdf import Chunk
 
-    vector_store.index_chunks("bio", "bio.pdf", [
+    vector_store.index_chunks("cours-bio", "svt", "bio.pdf", [
         Chunk("La mitochondrie produit l'énergie de la cellule sous forme d'ATP.", page=4),
         Chunk("Le noyau contient l'ADN de la cellule.", page=2),
     ])
-    vector_store.index_chunks("histoire", "histoire.pdf", [
-        Chunk("La Révolution française commence en 1789.", page=1),
+    vector_store.index_chunks("cours-chimie", "chimie", "chimie.pdf", [
+        Chunk("L'ATP est une molécule riche en énergie.", page=7),
     ])
 
-    results = vector_store.search("Quel organite fabrique l'ATP ?", ["bio"], limit=2)
+    results = vector_store.search("Quel organite fabrique l'ATP ?", "svt", limit=3)
     assert results[0].page == 4
-    assert all(r.document_id == "bio" for r in results)
+    assert {r.subject_id for r in results} == {"svt"}
 
-    vector_store.delete_document("bio")
-    assert vector_store.search("ATP", ["bio"]) == []
+    vector_store.delete_document("cours-bio")
+    assert vector_store.search("ATP", "svt") == []
+
+
+def test_set_subject_deplace_les_morceaux():
+    from app.rag.pdf import Chunk
+
+    vector_store.index_chunks("cours", "", "cours.pdf", [Chunk("La photosynthèse.", page=1)])
+    vector_store.set_subject("cours", "svt")
+    assert vector_store.search("photosynthèse", "svt")[0].document_id == "cours"
